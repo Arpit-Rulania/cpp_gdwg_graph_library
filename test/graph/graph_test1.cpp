@@ -19,7 +19,7 @@ TEST_CASE("test to see if empty constructor works") {
 }
 
 TEST_CASE("test to see if initialiser list constructor works") {
-	auto g = gdwg::graph<int, std::string>{1,5,7,1,4,8};
+	auto g = gdwg::graph<int, std::string>{1, 5, 7, 1, 4, 8};
 	CHECK(!g.empty());
 	// here size is not 6 because one 1 is duplicate.
 	CHECK(g.size() == 5);
@@ -29,7 +29,7 @@ TEST_CASE("test to see if initialiser list constructor works") {
 }
 
 TEST_CASE("test to see if move constructor works") {
-	auto g = gdwg::graph<int, std::string>{1,5,7,1,4,8};
+	auto g = gdwg::graph<int, std::string>{1, 5, 7, 1, 4, 8};
 	auto h = gdwg::graph<int, std::string>(std::move(g));
 	// because of move g should be empty and h should not.
 	CHECK(g.empty());
@@ -41,7 +41,7 @@ TEST_CASE("test to see if move constructor works") {
 }
 
 TEST_CASE("test to see if move operator works") {
-	auto g = gdwg::graph<int, std::string>{1,5,7,1,4,8};
+	auto g = gdwg::graph<int, std::string>{1, 5, 7, 1, 4, 8};
 	auto h = std::move(g);
 	// because of move g should be empty and h should not.
 	CHECK(g.empty());
@@ -53,7 +53,7 @@ TEST_CASE("test to see if move operator works") {
 }
 
 TEST_CASE("test to see if copy constructor works") {
-	auto g = gdwg::graph<int, std::string>{1,5,7,1,4,8};
+	auto g = gdwg::graph<int, std::string>{1, 5, 7, 1, 4, 8};
 	auto h = gdwg::graph<int, std::string>(g);
 	// here size is not 6 because one 1 is duplicate.
 	CHECK(g.size() == 5);

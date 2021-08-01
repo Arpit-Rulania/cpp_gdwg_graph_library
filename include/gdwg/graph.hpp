@@ -121,9 +121,9 @@ namespace gdwg {
 			// Outer loop to iterate over the map.
 			for (auto i = other.graph_.begin(); i != other.graph_.end(); ++i) {
 				// Inner loop to iterate over the set.
-				if(i->second.size() != 0) {
+				if (i->second.size() != 0) {
 					for (auto j = i->second.begin(); j != i->second.end(); ++j) {
-						//auto node = graph_.find(*(j.first));
+						// auto node = graph_.find(*(j.first));
 						auto p1 = std::get<0>(*j).lock();
 						auto node = graph_.find(p1);
 						// Create a weak copy of the shared ptr.
@@ -162,10 +162,14 @@ namespace gdwg {
 			return (graph_.find(value) != graph_.end());
 		}
 
-		[[nodiscard]] auto empty() -> bool { return graph_.empty(); }
+		[[nodiscard]] auto empty() -> bool {
+			return graph_.empty();
+		}
 
 		// Function that returns total number of nodes for testing purposes.
-		[[nodiscard]] auto size() -> int { return static_cast<int>(graph_.size()); }
+		[[nodiscard]] auto size() -> int {
+			return static_cast<int>(graph_.size());
+		}
 
 	private:
 		std::map<std::shared_ptr<N>, destination_node, mapComparator> graph_;

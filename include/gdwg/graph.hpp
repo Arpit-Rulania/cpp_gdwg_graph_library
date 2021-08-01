@@ -1,5 +1,6 @@
 #ifndef GDWG_GRAPH_HPP
 #define GDWG_GRAPH_HPP
+#include <algorithm>
 #include <iterator>
 #include <map>
 #include <memory>
@@ -37,12 +38,20 @@ namespace gdwg {
 		};
 
 		struct setComparator {
-			// using is_transparent = void;
-			// this overload will sort the destination node(edges) in increasing order.
-			// if the destination node is the same then it is sorted by weight "E"
+			using is_transparent = void;
+			// This overload will sort the destination node(edges) in increasing order.
+			// If the destination node is the same then it is sorted by weight "E"
 			bool operator()(edgePair const& a, edgePair const& b) const {
 				return ((*((a.first).lock()) < *((b.first).lock()))
 				        || ((*((a.first).lock()) == *((b.first).lock())) && (a.second < b.second)));
+			}
+			// This overload is used when set.find() is used.
+			// Comparator made for both lhs and rhs cases.
+			auto operator()(edgePair const& a, N const& b) const noexcept -> bool {
+				return *((a.first).lock()) < b;
+			}
+			auto operator()(N const& a, edgePair const& b) const noexcept -> bool {
+				return a < *((b.first).lock());
 			}
 		};
 
@@ -103,13 +112,11 @@ namespace gdwg {
 
 		// Move operator to move-assign all the nodes of an old graph.
 		auto operator=(graph&& other) noexcept -> graph& = default;
-		// Graph<N, E>& operator=(Graph<N, E>&& old) noexcept = default;
 
 		// Copy constructor to copy the whole old graph.
 		graph(graph const& other) {
 			// First we copy the shared pointer to the source(outer) node.
-			// Note: We copy pointer to already existing memory because we dont modify the memory
-			// anywhere.
+			// Note: We copy pointer to already existing memory because we dont modify the memory.
 			for (auto i = other.graph_.begin(); i != other.graph_.end(); ++i) {
 				auto sptr = i->first;
 				auto exist = graph_.find(*sptr);
@@ -159,10 +166,12 @@ namespace gdwg {
 		**                                    **
 		***************************************/
 
+		// This function tells us if the node exists in the graph.
 		[[nodiscard]] auto is_node(N const& value) -> bool {
 			return (graph_.find(value) != graph_.end());
 		}
 
+		// This function tells us if the graph is empty.
 		[[nodiscard]] auto empty() -> bool {
 			return graph_.empty();
 		}
@@ -170,6 +179,75 @@ namespace gdwg {
 		// Function that returns total number of nodes for testing purposes.
 		[[nodiscard]] auto size() -> int {
 			return static_cast<int>(graph_.size());
+		}
+
+		// This function tells us if a connection exists between src and dst.
+		[[nodiscard]] auto is_connected(N const& src, N const& dst) -> bool {
+			// error testing.
+			if (!is_node(src) || !is_node(dst)) {
+				throw std::runtime_error("Cannot call gdwg::graph<N, E>::is_connected if src or dst"
+				                         "node don't exist in the graph");
+			}
+			// Get the key value pair related to src.
+			auto sNode = graph_.find(src);
+			// sNode->second is the set(value).
+			return ((sNode->second).find(dst) != (sNode->second).end());
+		}
+
+		// This function returns a vector of all the nodes in the graph.
+		[[nodiscard]] auto nodes() -> std::vector<N> {
+			std::vector<N> v;
+			for (auto i = graph_.begin(); i != graph_.end(); ++i) {
+				v.emplace_back(*i->first);
+			}
+			return v;
+		}
+
+		// This function returns a vector of all the weight between 2 nodes.
+		[[nodiscard]] auto weights(N const& src, N const& dst) -> std::vector<E> {
+			if (!is_node(src) || !is_node(dst)) {
+				throw std::runtime_error("Cannot call gdwg::graph<N, E>::weights if src or dst node"
+				                         "don't exist in the graph");
+			}
+			auto sNode = graph_.find(src)->second;
+			std::vector<E> v;
+			for (auto it = sNode.begin(); it != sNode.end(); ++it) {
+				v.emplace_back(it.second);
+			}
+			return v;
+		}
+
+		// This function returns an iterator to an edge.
+		[[nodiscard]] auto find(N const& src, N const& dst, E const& weight) -> iterator {
+			auto sNode = graph_.find(src)->second;
+			auto dNode = graph_.find(dst);
+			std::weak_ptr<N> weak1 = dNode->first;
+			std::pair<std::weak_ptr<N>, E> edge1(weak1, weight);
+			auto foundEdge = sNode.find(edge1);
+			if (foundEdge == sNode.end()) {
+				// return cend;
+			}
+			else {
+				// return iteratorlol
+			}
+			return 0; // REMOVE THIS!!
+		}
+
+		// This function returns a vector of all the nodes leaving src.
+		[[nodiscard]] auto connections(N const& src) -> std::vector<N> {
+			if (!is_node(src)) {
+				throw std::runtime_error("Cannot call gdwg::graph<N, E>::connections if src doesn't"
+				                         "exist in the graph");
+			}
+			auto sNode = graph_.find(src)->second;
+			std::vector<N> v;
+			for (auto it = sNode.begin(); it != sNode.end(); ++it) {
+				// To avoid duplicates we do a binary search(very fast).
+				if (!std::binary_search(v.begin(), v.end(), *(it.first.lock()))) {
+					v.emplace_back(*(it.first.lock()));
+				}
+			}
+			return v;
 		}
 
 	private:

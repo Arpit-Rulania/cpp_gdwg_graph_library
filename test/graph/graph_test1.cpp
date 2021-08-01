@@ -63,3 +63,15 @@ TEST_CASE("test to see if copy constructor works") {
 	CHECK(g.is_node(7));
 	CHECK(!g.is_node(55));
 }
+
+TEST_CASE("test to see if copy assignment works") {
+	auto g = gdwg::graph<int, std::string>{1, 5, 7, 1, 4, 8};
+	auto h = g;
+	// here size is not 6 because one 1 is duplicate.
+	CHECK(g.size() == 5);
+	CHECK(h.size() == 5);
+	CHECK(h.is_node(5));
+	CHECK(!h.is_node(12));
+	CHECK(g.is_node(7));
+	CHECK(!g.is_node(55));
+}

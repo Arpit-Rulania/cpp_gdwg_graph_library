@@ -25,11 +25,11 @@ namespace gdwg {
                 return *a < *b;
             }
             template<typename t>
-            auto operator()(std::shared_ptr<N> const& a, t const b) const noexcept -> bool {
+            auto operator()(std::shared_ptr<N> const& a, t const& b) const noexcept -> bool {
                 return *a < b;
             }
             template<typename t>
-            auto operator()(t const a, std::shared_ptr<N> const& b) const noexcept -> bool {
+            auto operator()(t const& a, std::shared_ptr<N> const& b) const noexcept -> bool {
                 return a < *b;
             }
         };
@@ -49,27 +49,33 @@ namespace gdwg {
 				insert_node(*i);
 			}
 		}
-/*
-		template<typename InputIt>  // do i need to put this here? spec confusing
+
+		template<typename InputIt>
 		graph(InputIt first, InputIt last) {
-			for(auto i = first; i != last; ++i) {   //is this the correct way to iterate?
-				auto exist = graph_.find(first);   //first is not a pointer??
-				if (exist == graph_.end()) {
-					graph_[std::make_shared<N>(i)];    //is this the correct way to not add value
-				}
+			for(auto i = first; i != last; ++i) {
+				insert_node(*i);    // is i(first) in this case value or pointer? do we need to dereference it?
 			}
 		}
 
+		//  CONFUSED!
+		graph(graph&& other) noexcept = default;    //prefered method.
 		graph(graph&& other) noexcept {
 			graph_ = std::exchange(other.graph_, 0u);   //not sure if this would work
-			for(auto i = other.graph_.begin(); i != other.graph_.end(); ++i) {
-				graph_[std::make_shared<N>(i->first)]; //should it be * or **
-			}
-			for(i->set)
-				for
 
+			for(auto i = other.graph_.begin(); i != other.graph_.end(); ++i) {
+				insert_node(*i->first); //should it be * or **
+			}
+			for(auto i = other.graph_.begin(); i != other.graph_.end(); ++i) {
+				for(auto j = i->second.begin(); j != i->second.end(); ++j) {
+					auto node = graph_.find(*(j.first));
+					std::weak_ptr<N> weak1 = node;  //is this even correct?
+					std::pair <std::weak_ptr<N>, E> edge1 (weak1,j.second);
+					graph_[node].insert(edge1);
+				}
+			}
+			other.graph_.clear();
 		}
-	*/
+
 
 		/***************************************
 		**                                    **
@@ -81,7 +87,7 @@ namespace gdwg {
 		auto insert_node(N const& value) -> bool {
 			auto exist = graph_.find(value);
 			if (exist == graph_.end()) {
-		        graph_[std::make_shared<N>(value)] = std::set<std::pair<std::shared_ptr<N>, E>>();
+		        graph_[std::make_shared<N>(value)] = std::set<std::pair<std::weak_ptr<N>, E>>();
 		        return true;
 			}
 			return false;
@@ -93,11 +99,25 @@ namespace gdwg {
 			E weight;
 		};
 
-		// Your member functions go here
+		/***************************************
+		**                                    **
+		**            Accessors               **
+		**                                    **
+		***************************************/
+
+		[[nodiscard]] auto is_node(N const& value) -> bool {
+			return (graph_.find(value) != graph_.end());
+		}
+
+
 	private:
-		std::map<std::shared_ptr<N>, std::set<std::pair<std::shared_ptr<N>, E>>, mapCompare> graph_;
+		std::map<std::shared_ptr<N>, std::set<std::pair<std::weak_ptr<N>, E>>, mapCompare> graph_;
+		//std::map<std::shared_ptr<N>, std::set<std::pair<std::shared_ptr<N>, E>>, mapCompare> graph_;
 		//std::map<std::shared_ptr<N>, std::set<std::shared_ptr<std::pair<std::shared_ptr<N>, E>>>, mapCompare> graph_;
 	};
 } // namespace gdwg
 
 #endif // GDWG_GRAPH_HPP
+
+// do we need to use custom iterator for modifiers etc
+// should we use custom iterators?

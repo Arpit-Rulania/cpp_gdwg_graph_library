@@ -121,17 +121,18 @@ namespace gdwg {
 			// Outer loop to iterate over the map.
 			for (auto i = other.graph_.begin(); i != other.graph_.end(); ++i) {
 				// Inner loop to iterate over the set.
-				if (i->second.size() != 0) {
-					for (auto j = i->second.begin(); j != i->second.end(); ++j) {
-						// auto node = graph_.find(*(j.first));
-						auto p1 = std::get<0>(*j).lock();
-						auto node = graph_.find(p1);
-						// Create a weak copy of the shared ptr.
-						std::weak_ptr<N> weak1 = node->first;
-						// Create a pair of weak ptr,E to insert into the set.
-						std::pair<std::weak_ptr<N>, E> edge1(weak1, std::get<1>(*j));
-						graph_[node->first].insert(edge1);
-					}
+				if (i->second.size() == 0) {
+					continue;
+				}
+				for (auto j = i->second.begin(); j != i->second.end(); ++j) {
+					// auto node = graph_.find(*(j.first));
+					auto p1 = std::get<0>(*j).lock();
+					auto node = graph_.find(p1);
+					// Create a weak copy of the shared ptr.
+					std::weak_ptr<N> weak1 = node->first;
+					// Create a pair of weak ptr,E to insert into the set.
+					std::pair<std::weak_ptr<N>, E> edge1(weak1, std::get<1>(*j));
+					graph_[node->first].insert(edge1);
 				}
 			}
 		}

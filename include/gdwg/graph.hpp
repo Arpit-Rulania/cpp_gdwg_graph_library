@@ -160,6 +160,32 @@ namespace gdwg {
 			return false;
 		}
 
+		// This function inserts a new edge that is not in the graph.
+		auto insert_edge(N const& src, N const& dst, E const& weight) -> bool {
+			if (!is_node(src) || !is_node(dst)) {
+				throw std::runtime_error("Cannot call gdwg::graph<N, E>::insert_edge when either src"
+				                         "or dst node does not exist");
+			}
+			// sNode is the set of edges going from src.
+			auto sNode = graph_.find(src);
+			// We need to make an edge to check if it already exists.
+			// First we need to find the dst node share ptr and make a weak ptr.
+			auto dNode = graph_.find(dst);
+			std::weak_ptr<N> weak1 = dNode->first;
+			// Make a pair of the weak ptr from above and weight from the args.
+			std::pair<std::weak_ptr<N>, E> edge1(weak1, weight);
+			// Check if the edge exists.
+			auto foundEdge = sNode->second.find(edge1);
+			// If the edge does not exist, add new edge.
+			if (foundEdge == sNode->second.end()) {
+				graph_[sNode->first].insert(edge1);
+				return true;
+			}
+			return false;
+		}
+
+		auto replace_node(N const& old_data, N const& new_data) -> bool {}
+
 		/***************************************
 		**                                    **
 		**            Accessors               **
@@ -212,7 +238,9 @@ namespace gdwg {
 			auto sNode = graph_.find(src)->second;
 			std::vector<E> v;
 			for (auto it = sNode.begin(); it != sNode.end(); ++it) {
-				v.emplace_back(it.second);
+				if (*(it->first).lock() == dst) {
+					v.emplace_back(it->second);
+				}
 			}
 			return v;
 		}
@@ -243,8 +271,8 @@ namespace gdwg {
 			std::vector<N> v;
 			for (auto it = sNode.begin(); it != sNode.end(); ++it) {
 				// To avoid duplicates we do a binary search(very fast).
-				if (!std::binary_search(v.begin(), v.end(), *(it.first.lock()))) {
-					v.emplace_back(*(it.first.lock()));
+				if (!std::binary_search(v.begin(), v.end(), *(it->first.lock()))) {
+					v.emplace_back(*(it->first.lock()));
 				}
 			}
 			return v;

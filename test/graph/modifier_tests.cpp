@@ -49,9 +49,6 @@ TEST_CASE("Replace Node Test") {
 	// But 2 does not exist.
 	CHECK(g.replace_node(1, 20));
 	// now check if it has been replaces using accessor.
-	/*auto w = g.weights(20, 4);
-	CHECK(w[0] == "apple");
-	CHECK(w[1] == "b-apple");*/
 	auto v = g.nodes();
 	CHECK(v[0] == 20);
 	CHECK(v[3] == 7);
@@ -96,7 +93,7 @@ TEST_CASE("erase node and erase edge test") {
 	// right now a and b are connected:
 	CHECK(g.is_connected("A", "B"));
 	// delete the edge A->B:
-	CHECK(g.erase_edge("A", "B", 1));  // TESTING ERASE EDGE.
+	CHECK(g.erase_edge("A", "B", 1)); // TESTING ERASE EDGE.
 	// now they should be seperate:
 	CHECK(!g.is_connected("A", "B"));
 

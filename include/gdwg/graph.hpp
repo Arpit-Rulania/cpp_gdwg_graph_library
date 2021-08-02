@@ -1,12 +1,12 @@
 #ifndef GDWG_GRAPH_HPP
 #define GDWG_GRAPH_HPP
 #include <algorithm>
+#include <iostream>
 #include <iterator>
 #include <map>
 #include <memory>
 #include <set>
 #include <utility>
-#include <iostream>
 
 // TODO: Make this graph generic
 //       ... this won't just compile
@@ -99,7 +99,7 @@ namespace gdwg {
 			auto operator++() noexcept -> iterator& {
 				if (curr_ != end_) {
 					pos_++;
-					if (pos_ == ((curr_->second).cend())) {
+					if (pos_ == ((curr_->second).end())) {
 						curr_++;
 						while (curr_ != end_) {
 							if (!(curr_->second).empty()) {
@@ -281,7 +281,7 @@ namespace gdwg {
 			// std::cout<< "***" << *sNode->first <<"\n";
 			// std::cout<< sNode <<"\n";
 			*sNode = new_data;
-			std::cout<< *sNode <<"\n";
+			std::cout << *sNode << "\n";
 			return true;
 		}
 
@@ -352,6 +352,23 @@ namespace gdwg {
 			return false;
 		}
 
+		auto erase_edge(iterator i) -> iterator {
+			auto nextptr = i++;
+			auto b = erase_edge((*i).from, (*i).to, (*i).weight);
+
+			if (b) {
+				return nextptr;
+			}
+			return end();
+		}
+
+		auto erase_edge(iterator i, iterator s) -> iterator {
+			for (auto it = i; it != s; it++) {
+				erase_edge((*it).from, (*it).to, (*it).weight);
+			}
+			return s;
+		}
+
 		auto clear() noexcept -> void {
 			graph_.clear();
 		}
@@ -418,7 +435,7 @@ namespace gdwg {
 		// This function returns an iterator to an edge.
 		[[nodiscard]] auto find(N const& src, N const& dst, E const& weight) -> iterator {
 			auto srcNode = graph_.find(src);
-			//auto sNode = srcNode->second;
+			// auto sNode = srcNode->second;
 			auto dNode = graph_.find(dst);
 			std::weak_ptr<N> weak1 = dNode->first;
 			std::pair<std::weak_ptr<N>, E> edge1(weak1, weight);
@@ -449,20 +466,20 @@ namespace gdwg {
 		}
 		/*
 		[[nodiscard]] auto operator==(graph const& other) -> bool {
-			auto a = other.graph_.begin();
-			while (a !=)
+		   auto a = other.graph_.begin();
+		   while (a !=)
 		}
 		*/
-		// friend auto operator<<(std::ostream& os, graph const& g) -> std::ostream& {
-		// 	for (auto iter = g.graph_.begin(); iter != g.graph_.end(); ++iter) {
-		// 		os << *(iter->first) << "(" << '\n';
-		// 		for (auto it = iter->second.begin(); it != iter->second.end(); ++it) {
-		// 			os << '\t' << *(it->first.lock()) << " | " << (it->second) << '\n';
-		// 		}
-		// 		os << ")" << '\n';
-		// 	}
-		// 	return os;
-		// }
+		friend auto operator<<(std::ostream& os, graph const& g) -> std::ostream& {
+			for (auto iter = g.graph_.begin(); iter != g.graph_.end(); ++iter) {
+				os << *(iter->first) << "(" << '\n';
+				for (auto it = iter->second.begin(); it != iter->second.end(); ++it) {
+					os << '\t' << *(it->first.lock()) << " | " << (it->second) << '\n';
+				}
+				os << ")" << '\n';
+			}
+			return os;
+		}
 
 	private:
 		std::map<std::shared_ptr<N>, destination_node, mapComparator> graph_;

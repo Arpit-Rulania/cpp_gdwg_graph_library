@@ -6,6 +6,7 @@
 #include <memory>
 #include <set>
 #include <utility>
+#include <iostream>
 
 // TODO: Make this graph generic
 //       ... this won't just compile
@@ -276,8 +277,11 @@ namespace gdwg {
 				return false;
 			}
 			// Get the key corresponding to old data
-			auto sNode = graph_.find(old_data)->first;
+			auto sNode = graph_.find(old_data)->first.get();
+			// std::cout<< "***" << *sNode->first <<"\n";
+			// std::cout<< sNode <<"\n";
 			*sNode = new_data;
+			std::cout<< *sNode <<"\n";
 			return true;
 		}
 
@@ -414,12 +418,12 @@ namespace gdwg {
 		// This function returns an iterator to an edge.
 		[[nodiscard]] auto find(N const& src, N const& dst, E const& weight) -> iterator {
 			auto srcNode = graph_.find(src);
-			auto sNode = srcNode->second;
+			//auto sNode = srcNode->second;
 			auto dNode = graph_.find(dst);
 			std::weak_ptr<N> weak1 = dNode->first;
 			std::pair<std::weak_ptr<N>, E> edge1(weak1, weight);
-			auto foundEdge = sNode.find(edge1);
-			if (foundEdge == sNode.end()) {
+			auto foundEdge = srcNode->second.find(edge1);
+			if (foundEdge == srcNode->second.end()) {
 				return end();
 			}
 			else {
@@ -449,16 +453,16 @@ namespace gdwg {
 			while (a !=)
 		}
 		*/
-		friend auto operator<<(std::ostream& os, graph const& g) -> std::ostream& {
-			for (auto iter = g.graph_.begin(); iter != g.graph_.end(); ++iter) {
-				os << *(iter->first) << "(" << '\n';
-				for (auto it = iter->second.begin(); it != iter->second.end(); ++it) {
-					os << '\t' << *(it->first.lock()) << " | " << (it->second) << '\n';
-				}
-				os << ")" << '\n';
-			}
-			return os;
-		}
+		// friend auto operator<<(std::ostream& os, graph const& g) -> std::ostream& {
+		// 	for (auto iter = g.graph_.begin(); iter != g.graph_.end(); ++iter) {
+		// 		os << *(iter->first) << "(" << '\n';
+		// 		for (auto it = iter->second.begin(); it != iter->second.end(); ++it) {
+		// 			os << '\t' << *(it->first.lock()) << " | " << (it->second) << '\n';
+		// 		}
+		// 		os << ")" << '\n';
+		// 	}
+		// 	return os;
+		// }
 
 	private:
 		std::map<std::shared_ptr<N>, destination_node, mapComparator> graph_;

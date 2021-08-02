@@ -70,12 +70,21 @@ namespace gdwg {
 		};
 
 		class iterator {
+			using outer_iterator =
+			   typename std::map<std::shared_ptr<N>, destination_node, mapComparator>::const_iterator;
+			using inner_iterator = typename destination_node::const_iterator;
+
 		public:
 			using value_type = graph<N, E>::value_type;
 			using reference = value_type;
 			using pointer = void;
 			using difference_type = std::ptrdiff_t;
 			using iterator_category = std::bidirectional_iterator_tag;
+
+			iterator(const outer_iterator& curr, const outer_iterator& end, const inner_iterator& pos)
+			: curr_{curr}
+			, end_{end}
+			, pos_{pos} {};
 
 			auto operator*() noexcept -> reference {
 				value_type v;
@@ -136,19 +145,35 @@ namespace gdwg {
 				return temp;
 			}
 
+			// Iterator comparison
+			auto operator==(iterator const& other) -> bool {
+				if (other.curr_ == other.end_ || curr_ == end_) {
+					return (other.curr_ == curr_);
+				}
+				else {
+					return ((other.pos_ == pos_) && (other.curr_ == curr_));
+				}
+			}
+
 		private:
-			using outer_iterator =
-			   typename std::map<std::shared_ptr<N>, destination_node, mapComparator>::const_iterator;
-			using inner_iterator = typename destination_node::const_iterator;
 			friend class graph;
 			outer_iterator curr_; // Current graph iterator
 			outer_iterator end_; // End iterator
 			inner_iterator pos_; // Position of inner iterator
-			iterator(const outer_iterator& curr, const outer_iterator& end, const inner_iterator& pos)
-			: curr_{curr}
-			, end_{end}
-			, pos_{pos} {};
 		};
+
+		[[nodiscard]] auto begin() const -> iterator {
+			for (auto iter = graph_.begin(); iter != graph_.end(); ++iter) {
+				if (!(iter->second).empty()) {
+					return iterator{iter, graph_.end(), (iter->second).begin()};
+				}
+			}
+			return iterator{graph_.end, graph_.end(), {}};
+		}
+
+		[[nodiscard]] auto end() const -> iterator {
+			return iterator{graph_.end(), graph_.end(), (graph_.rbegin()->second).end()};
+		}
 
 		/***************************************
 		**                                    **
@@ -397,18 +422,18 @@ namespace gdwg {
 
 		// This function returns an iterator to an edge.
 		[[nodiscard]] auto find(N const& src, N const& dst, E const& weight) -> iterator {
-			auto sNode = graph_.find(src)->second;
+			auto srcNode = graph_.find(src);
+			auto sNode = srcNode->second;
 			auto dNode = graph_.find(dst);
 			std::weak_ptr<N> weak1 = dNode->first;
 			std::pair<std::weak_ptr<N>, E> edge1(weak1, weight);
 			auto foundEdge = sNode.find(edge1);
 			if (foundEdge == sNode.end()) {
-				// return cend;
+				return end();
 			}
 			else {
-				// return iteratorlol
+				return iterator{srcNode, graph_.end(), foundEdge};
 			}
-			return 0; // REMOVE THIS!!
 		}
 
 		// This function returns a vector of all the nodes leaving src.

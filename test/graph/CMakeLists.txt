@@ -7,3 +7,8 @@ cxx_test(
    TARGET modifier_tests
    FILENAME "modifier_tests.cpp"
 )
+
+cxx_test(
+   TARGET iter_test
+   FILENAME "iter_test.cpp"
+)

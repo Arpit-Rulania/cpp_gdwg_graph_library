@@ -163,8 +163,8 @@ namespace gdwg {
 		// This function inserts a new edge that is not in the graph.
 		auto insert_edge(N const& src, N const& dst, E const& weight) -> bool {
 			if (!is_node(src) || !is_node(dst)) {
-				throw std::runtime_error("Cannot call gdwg::graph<N, E>::insert_edge when either src"
-				                         "or dst node does not exist");
+				throw std::runtime_error("Cannot call gdwg::graph<N, E>::insert_edge when either "
+				                         "src or dst node does not exist");
 			}
 			// sNode is the set of edges going from src.
 			auto sNode = graph_.find(src);
@@ -184,7 +184,70 @@ namespace gdwg {
 			return false;
 		}
 
-		auto replace_node(N const& old_data, N const& new_data) -> bool {}
+		auto replace_node(N const& old_data, N const& new_data) -> bool {
+			if (!is_node(old_data)) {
+				throw std::runtime_error("Cannot call gdwg::graph<N, E>::replace_node on a node "
+				                         "that doesn't exist");
+			}
+			if (is_node(new_data)) {
+				return false;
+			}
+			// Get the key corresponding to old data
+			auto sNode = graph_.find(old_data)->first;
+			*sNode = new_data;
+			return true;
+		}
+
+		auto merge_replace_node(N const& old_data, N const& new_data) -> void {
+			if (!is_node(old_data) || !is_node(new_data)) {
+				throw std::runtime_error("Cannot call gdwg::graph<N, E>::merge_replace_node on old"
+				                         " or new data if they don't exist in the graph");
+			}
+			// Get a pointer to old data node
+			auto oNode = graph_.find(old_data);
+			// Get a pointer to new data node
+			auto nNode = graph_.find(new_data);
+			// Merge old set into new set
+			(nNode->second).merge(oNode->second);
+			// Set the old incoming edges to point to new
+			for (auto i = graph_.begin(); i != graph_.end(); ++i) {
+				if (i->second.size() == 0 || i->first == nNode->first || i->first == oNode->first) {
+					continue;
+				}
+				for (auto j = i->second.begin(); j != i->second.end(); ++j) {
+					if (*(j->first).lock() == old_data) {
+						// Create a new edge and add it to "i" as an outgoing node
+						std::weak_ptr<N> weak1 = nNode->first;
+						std::pair<std::weak_ptr<N>, E> edge1(weak1, j->second);
+						graph_[i->first].insert(edge1);
+					}
+				}
+			}
+			// Finally delete the old node totally.
+			erase_node(old_data);
+		}
+
+		auto erase_node(N const& value) -> bool {
+			auto oNode = graph_.find(value);
+			// Deleteing all of the outgoing edges
+			oNode->second.clear();
+			// Deleteing all of the incoming edges
+			for (auto i = graph_.begin(); i != graph_.end(); ++i) {
+				if (i->second.size() == 0) {
+					continue;
+				}
+				for (auto j = i->second.begin(); j != i->second.end();) {
+					if (*((j->first).lock()) == value) {
+						i->second.erase(j++);
+					} else {
+						j++;
+					}
+				}
+			}
+			// Delete the node itself.
+			graph_.erase(oNode);
+			return (graph_.find(value) == graph_.end());
+		}
 
 		/***************************************
 		**                                    **
@@ -212,7 +275,7 @@ namespace gdwg {
 			// error testing.
 			if (!is_node(src) || !is_node(dst)) {
 				throw std::runtime_error("Cannot call gdwg::graph<N, E>::is_connected if src or dst"
-				                         "node don't exist in the graph");
+				                         " node don't exist in the graph");
 			}
 			// Get the key value pair related to src.
 			auto sNode = graph_.find(src);
@@ -233,7 +296,7 @@ namespace gdwg {
 		[[nodiscard]] auto weights(N const& src, N const& dst) -> std::vector<E> {
 			if (!is_node(src) || !is_node(dst)) {
 				throw std::runtime_error("Cannot call gdwg::graph<N, E>::weights if src or dst node"
-				                         "don't exist in the graph");
+				                         " don't exist in the graph");
 			}
 			auto sNode = graph_.find(src)->second;
 			std::vector<E> v;
@@ -265,7 +328,7 @@ namespace gdwg {
 		[[nodiscard]] auto connections(N const& src) -> std::vector<N> {
 			if (!is_node(src)) {
 				throw std::runtime_error("Cannot call gdwg::graph<N, E>::connections if src doesn't"
-				                         "exist in the graph");
+				                         " exist in the graph");
 			}
 			auto sNode = graph_.find(src)->second;
 			std::vector<N> v;

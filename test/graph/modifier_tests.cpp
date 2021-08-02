@@ -86,3 +86,28 @@ TEST_CASE("Merge Replace Test") {
 	auto y = g.weights("B", "B");
 	CHECK(y[0] == 1);
 }
+
+TEST_CASE("erase node and erase edge test") {
+	auto g = gdwg::graph<std::string, int>{"A", "B", "C", "D", "E", "F"};
+	CHECK(g.insert_edge("A", "B", 1));
+	CHECK(g.insert_edge("B", "F", 4));
+	CHECK(g.insert_edge("A", "A", 1));
+	CHECK(g.insert_edge("D", "A", 6));
+	// right now a and b are connected:
+	CHECK(g.is_connected("A", "B"));
+	// delete the edge A->B:
+	CHECK(g.erase_edge("A", "B", 1));  // TESTING ERASE EDGE.
+	// now they should be seperate:
+	CHECK(!g.is_connected("A", "B"));
+
+	// now delete node A all toghter:  // TESTING ERASE NODE.
+	CHECK(g.erase_node("A"));
+	// Check total number of things left(=5)
+	CHECK(g.size() == 5);
+	auto v = g.connections("D");
+	CHECK(v.size() == 0);
+
+	// Now we test the function that deletes the whole map/graph.
+	g.clear();
+	CHECK(g.size() == 0);
+}

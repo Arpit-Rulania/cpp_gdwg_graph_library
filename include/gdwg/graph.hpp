@@ -71,16 +71,83 @@ namespace gdwg {
 
 		class iterator {
 		public:
-			/*using value_type = graph<N, E>::value_type;
+			using value_type = graph<N, E>::value_type;
 			using reference = value_type;
 			using pointer = void;
 			using difference_type = std::ptrdiff_t;
-			using iterator_category = std::bidirectional_iterator_tag;*/
+			using iterator_category = std::bidirectional_iterator_tag;
+
+			auto operator*() noexcept -> reference {
+				value_type v;
+				v.from = *(curr_->first);
+				v.to = *(pos_->first.lock());
+				v.weight = (pos_->second);
+				return v;
+			}
+
+			// pre increment
+			auto operator++() noexcept -> iterator& {
+				if (curr_ != end_) {
+					pos_++;
+					if (pos_ == ((curr_->second).cend())) {
+						curr_++;
+						while (curr_ != end_) {
+							if (!(curr_->second).empty()) {
+								pos_ = (curr_->second).begin();
+								return *this;
+							}
+							curr_++;
+						}
+					}
+				}
+				return *this;
+			}
+
+			// post increment... strapped to pre increment.
+			auto operator++(int) noexcept -> iterator {
+				auto temp = *this;
+				++(*this);
+				return temp;
+			}
+
+			// pre decrement
+			auto operator--() noexcept -> iterator& {
+				if (curr_ == end_) {
+					--curr_;
+					while ((curr_->second).empty()) {
+						--curr_;
+					}
+					pos_ = (curr_->second).cend();
+					pos_--;
+					return *this;
+				}
+				while (pos_ == (curr_->second).cbegin()) {
+					curr_--;
+					pos_ = (curr_->second).cend();
+				}
+				--pos_;
+				return *this;
+			}
+
+			// post decrement
+			auto operator--(int) noexcept -> iterator {
+				auto temp = *this;
+				--(*this);
+				return temp;
+			}
 
 		private:
-			typename std::map<std::shared_ptr<N>, destination_node, mapComparator>::const_iterator outer_iterator;
-			typename destination_node::const_iterator inner_iterator;
+			using outer_iterator =
+			   typename std::map<std::shared_ptr<N>, destination_node, mapComparator>::const_iterator;
+			using inner_iterator = typename destination_node::const_iterator;
 			friend class graph;
+			outer_iterator curr_; // Current graph iterator
+			outer_iterator end_; // End iterator
+			inner_iterator pos_; // Position of inner iterator
+			iterator(const outer_iterator& curr, const outer_iterator& end, const inner_iterator& pos)
+			: curr_{curr}
+			, end_{end}
+			, pos_{pos} {};
 		};
 
 		/***************************************
@@ -239,7 +306,8 @@ namespace gdwg {
 				for (auto j = i->second.begin(); j != i->second.end();) {
 					if (*((j->first).lock()) == value) {
 						i->second.erase(j++);
-					} else {
+					}
+					else {
 						j++;
 					}
 				}
@@ -247,6 +315,25 @@ namespace gdwg {
 			// Delete the node itself.
 			graph_.erase(oNode);
 			return (graph_.find(value) == graph_.end());
+		}
+
+		auto erase_edge(N const& src, N const& dst, E const& weight) -> bool {
+			if (!is_node(src) || !is_node(dst)) {
+				throw std::runtime_error("Cannot call gdwg::graph<N, E>::erase_edge on src or dst "
+				                         "if they don't exist in the graph");
+			}
+			auto sNode = graph_.find(src);
+			for (auto it = sNode->second.begin(); it != sNode->second.end(); ++it) {
+				if ((*it->first.lock() == dst) && (it->second == weight)) {
+					sNode->second.erase(it);
+					return true;
+				}
+			}
+			return false;
+		}
+
+		auto clear() noexcept -> void {
+			graph_.clear();
 		}
 
 		/***************************************

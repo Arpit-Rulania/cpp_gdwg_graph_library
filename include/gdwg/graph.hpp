@@ -163,16 +163,11 @@ namespace gdwg {
 		};
 
 		[[nodiscard]] auto begin() const -> iterator {
-			for (auto iter = graph_.begin(); iter != graph_.end(); ++iter) {
-				if (!(iter->second).empty()) {
-					return iterator{iter, graph_.end(), (iter->second).begin()};
-				}
-			}
-			return iterator{graph_.end, graph_.end(), {}};
+			return iterator{graph_.begin(), graph_.end(), ((graph_.begin())->second).begin()};
 		}
 
 		[[nodiscard]] auto end() const -> iterator {
-			return iterator{graph_.end(), graph_.end(), (graph_.rbegin()->second).end()};
+			return iterator{graph_.end(), graph_.end(), {}};
 		}
 
 		/***************************************
@@ -207,14 +202,10 @@ namespace gdwg {
 
 		// Copy constructor to copy the whole old graph.
 		graph(graph const& other) {
-			// First we copy the shared pointer to the source(outer) node.
-			// Note: We copy pointer to already existing memory because we dont modify the memory.
+			// We create memory copies of the src nodes because they can be modified.
+			// Note: We copy do modify memory for example in replace_node().
 			for (auto i = other.graph_.begin(); i != other.graph_.end(); ++i) {
-				auto sptr = i->first;
-				auto exist = graph_.find(*sptr);
-				if (exist == graph_.end()) {
-					graph_[sptr] = destination_node();
-				}
+				insert_node(*(i->first));
 			}
 			// Next we copy all the destination(edges) nodes.
 			// Outer loop to iterate over the map.
@@ -451,6 +442,22 @@ namespace gdwg {
 				}
 			}
 			return v;
+		}
+		/*
+		[[nodiscard]] auto operator==(graph const& other) -> bool {
+			auto a = other.graph_.begin();
+			while (a !=)
+		}
+		*/
+		friend auto operator<<(std::ostream& os, graph const& g) -> std::ostream& {
+			for (auto iter = g.graph_.begin(); iter != g.graph_.end(); ++iter) {
+				os << *(iter->first) << "(" << '\n';
+				for (auto it = iter->second.begin(); it != iter->second.end(); ++it) {
+					os << '\t' << *(it->first.lock()) << " | " << (it->second) << '\n';
+				}
+				os << ")" << '\n';
+			}
+			return os;
 		}
 
 	private:

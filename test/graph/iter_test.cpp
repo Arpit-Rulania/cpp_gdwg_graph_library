@@ -15,4 +15,8 @@ TEST_CASE("test to see insert_edge work") {
 	CHECK(g.insert_edge(1, 8, "e"));
 	CHECK(g.insert_edge(5, 4, "f"));
     auto iter = g.find(1,4,"c");
+    auto s = *iter;
+    CHECK(s.from == 1);
+    CHECK(s.to == 4);
+    CHECK(s.weight == "c");
 }
